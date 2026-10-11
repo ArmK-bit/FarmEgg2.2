@@ -20,12 +20,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 </head>
 <body>
 <header>
-  <div class="brand"><div class="logo">🥚</div><div><h1>STF EggTrack</h1><p>Egg Production Dashboard · Farm Analytics</p></div></div>
+  <div class="brand"><div class="logo">🥚</div><div><h1>STF EggTrack</h1><p>Egg Production Dashboard · Sai Thong Farm </p></div></div>
   <div class="live">● Dashboard · Read only</div>
 </header>
 <main>
   <div class="toolbar">
-    <div><h2 class="section-title">ภาพรวมผลผลิตไข่</h2><div class="sub">ติดตามผลผลิตแยกตามวันและโรงเรือนจากข้อมูลใน Google Sheets</div></div>
+    <div><h2 class="section-title">ภาพรวมผลผลิตไข่ประจำวัน</h2><div class="sub">ติดตามผลผลิตแยกตามวันและโรงเรือนจากข้อมูลใน Google Sheets</div></div>
     <div class="filters">
       <div class="field"><label for="reportDate">วันที่รายงาน</label><input id="reportDate" type="date"></div>
       <div class="field"><label for="period">มุมมองกราฟ</label><select id="period"><option value="7">7 วันล่าสุด</option><option value="30">30 วันล่าสุด</option><option value="all">ทั้งหมด</option></select></div>
@@ -35,8 +35,9 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
   <div class="error" id="error"></div>
   <section class="cards">
     <div class="card blue"><div class="card-label">🥚 ไข่ทั้งหมด</div><div class="card-value" id="total">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
-    <div class="card green"><div class="card-label">✓ ไข่ขนาด 65–109 กรัม</div><div class="card-value" id="good">—</div><div class="card-note">65–72 + 73–76 + 77–109 กรัม</div></div>
-    <div class="card orange"><div class="card-label">⚠ ไข่แฝด</div><div class="card-value" id="double">—</div><div class="card-note">น้ำหนัก 110 กรัมขึ้นไป</div></div>
+    <div class="card green"><div class="card-label"> ✓ ไข่ขนาด 65–109 กรัม</div><div class="card-value" id="good">—</div><div class="card-note">65–72 + 73–76 + 77–109 กรัม</div></div>
+    
+    <div class="card orange"><div class="card-label"> ⚠ ไข่แฝด</div><div class="card-value" id="double">—</div><div class="card-note">น้ำหนัก 110 กรัมขึ้นไป</div></div>
     <div class="card red"><div class="card-label">◈ ไข่บุบร้าว</div><div class="card-value" id="cracked">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
     <div class="card purple"><div class="card-label">% ไข่ขนาด 65–109 กรัม</div><div class="card-value" id="goodPct">—</div><div class="card-note">เทียบกับไข่ทั้งหมด</div></div>
   </section>
