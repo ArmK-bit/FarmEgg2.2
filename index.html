@@ -20,12 +20,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 </head>
 <body>
 <header>
-  <div class="brand"><div class="logo">🥚</div><div><h1>STF EggTrack</h1><p>Egg Production Dashboard · Sai Thong Farm </p></div></div>
+  <div class="brand"><div class="logo">🥚</div><div><h1>STF EggTrack</h1><p>Egg Production Dashboard ·Sai Thong Farm </p></div></div>
   <div class="live">● Dashboard · Read only</div>
 </header>
 <main>
   <div class="toolbar">
-    <div><h2 class="section-title">ภาพรวมผลผลิตไข่ประจำวัน</h2><div class="sub">ติดตามผลผลิตแยกตามวันและโรงเรือนจากข้อมูลใน Google Sheets</div></div>
+    <div><h2 class="section-title">ภาพรวมผลผลิตไข่ประจำวัน</h2><div class="sub">ติดตามผลผลิตและคุณภาพไข่แยกตามวันและโรงเรือนจาก Google Sheets · อัปเดตทุก 30 วินาที</div></div>
     <div class="filters">
       <div class="field"><label for="reportDate">วันที่รายงาน</label><input id="reportDate" type="date"></div>
       <div class="field"><label for="period">มุมมองกราฟ</label><select id="period"><option value="7">7 วันล่าสุด</option><option value="30">30 วันล่าสุด</option><option value="all">ทั้งหมด</option></select></div>
@@ -35,11 +35,14 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
   <div class="error" id="error"></div>
   <section class="cards">
     <div class="card blue"><div class="card-label">🥚 ไข่ทั้งหมด</div><div class="card-value" id="total">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
-    <div class="card green"><div class="card-label"> ✓ ไข่ขนาด 65–109 กรัม</div><div class="card-value" id="good">—</div><div class="card-note">65–72 + 73–76 + 77–109 กรัม</div></div>
-    
-    <div class="card orange"><div class="card-label"> ⚠ ไข่แฝด</div><div class="card-value" id="double">—</div><div class="card-note">น้ำหนัก 110 กรัมขึ้นไป</div></div>
+    <div class="card green"><div class="card-label">คัดทิ้ง &lt;64 กรัม</div><div class="card-value" id="under64">—</div><div class="card-note">ไข่ขนาดเล็ก</div></div>
+    <div class="card purple"><div class="card-label">คัดทิ้ง 64–71 กรัม</div><div class="card-value" id="w6471">—</div><div class="card-note">ไข่ขนาดเล็ก</div></div>
+    <div class="card green"><div class="card-label">ไข่เล็กคัดฟัก 72–75 กรัม</div><div class="card-value" id="w7275">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
+    <div class="card green"><div class="card-label">ไข่ฟัก 76–109 กรัม</div><div class="card-value" id="w76109">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
+    <div class="card orange"><div class="card-label">⚠ ไข่แฝด ≥110 กรัม</div><div class="card-value" id="double">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
     <div class="card red"><div class="card-label">◈ ไข่บุบร้าว</div><div class="card-value" id="cracked">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
-    <div class="card purple"><div class="card-label">% ไข่ขนาด 65–109 กรัม</div><div class="card-value" id="goodPct">—</div><div class="card-note">เทียบกับไข่ทั้งหมด</div></div>
+    <div class="card purple"><div class="card-label">ไข่ผิดรูป</div><div class="card-value" id="deformed">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
+    <div class="card blue"><div class="card-label">% ไข่ขนาด 72–109 กรัม</div><div class="card-value" id="goodPct">—</div><div class="card-note">เทียบกับไข่ทั้งหมด</div></div>
   </section>
   <section class="charts">
     <div class="panel"><div class="panel-head"><div><h2>แนวโน้มผลผลิตรายวัน</h2><div class="hint">จำนวนไข่ทั้งหมดตามวันที่</div></div></div><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
@@ -48,7 +51,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
   <section class="panel" style="margin-bottom:18px"><div class="panel-head"><div><h2>เปรียบเทียบผลผลิตรายโรงเรือน</h2><div class="hint">จำนวนไข่ทั้งหมดในวันที่เลือก</div></div></div><div class="chart-wrap"><canvas id="barnChart"></canvas></div></section>
   <section class="panel table-panel">
     <div class="table-head"><div><h2 style="margin:0 0 5px">รายละเอียดรายโรงเรือน</h2><div class="hint" id="tableSubtitle">ข้อมูลตามวันที่เลือก</div></div><input id="tableSearch" placeholder="ค้นหาโรงเรือน..."></div>
-    <div class="table-scroll"><table><thead><tr><th>โรงเรือน</th><th>น้อยกว่า 64 กรัม</th><th>65–72 กรัม</th><th>73–76 กรัม</th><th>77–109 กรัม</th><th>ไข่แฝด</th><th>ไข่บุบร้าว</th><th>ไข่ผิดรูป</th><th>รวมทั้งหมด</th></tr></thead><tbody id="barnRows"></tbody></table></div>
+    <div class="table-scroll"><table><thead><tr><th>โรงเรือน</th><th>น้อยกว่า 64 กรัม</th><th>64–71 กรัม</th><th>72–75 กรัม</th><th>76–109 กรัม</th><th>ไข่แฝด ≥110 กรัม</th><th>ไข่บุบร้าว</th><th>ไข่ผิดรูป</th><th>รวมทั้งหมด</th></tr></thead><tbody id="barnRows"></tbody></table></div>
   </section>
   <div class="status" id="status">กำลังเชื่อมต่อข้อมูล…</div>
 </main>
@@ -58,13 +61,19 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzMTGBQxWK9V-5D9ivSa4Cc4EpedWXpACjQ46LxuTkFjxB_TFai4l3kEXFvPLPJ1EuK/exec";
 
 const COL = {
-  date: "วันที่", barn: "โรงเรือน", under64: "น้อยกว่า 64 กรัม",
-  w6572: "65-72 กรัม", w7376: "73-76 กรัม", w77109: "77-109 กรัม",
-  double: "ไข่แฝด (น้ำหนัก 110 กรัม ขึ้นไป)", cracked: "ไข่บุบร้าว",
-  deformed: "ไข่ผิดรูป", total: "รวมทั้งหมด"
+  date: "วันที่",
+  barn: "โรงเรือน",
+  under64: "ไข่เล็กคัดทิ้ง (<64 กรัม)",
+  w6471: "ไข่เล็กคัดทิ้ง (64-71 กรัม)",
+  w7275: "ไข่เล็กคัดฟัก (72-75 กรัม)",
+  w76109: "ไข่ฟัก (76-109 กรัม)",
+  double: "ไข่แฝด (น้ำหนัก 110 กรัมขึ้นไป)",
+  cracked: "ไข่บุบร้าว",
+  deformed: "ไข่ผิดรูป",
+  total: "รวมทั้งหมด"
 };
 let allRows = [], trendChart, mixChart, barnChart;
-const number = v => Number(v || 0) || 0;
+const number = v => Number(String(v ?? "").replace(/,/g, "")) || 0;
 const fmt = v => Math.round(v).toLocaleString("th-TH");
 function parseDate(v){
   if(v instanceof Date) return v;
@@ -80,23 +89,33 @@ function iso(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"
 function dayKey(row){const d=parseDate(row[COL.date]);return d?iso(d):"";}
 function val(row,key){return number(row[key]);}
 function aggregate(rows){
-  return rows.reduce((a,r)=>{for(const k of ["under64","w6572","w7376","w77109","double","cracked","deformed","total"])a[k]+=val(r,COL[k]);return a;},{under64:0,w6572:0,w7376:0,w77109:0,double:0,cracked:0,deformed:0,total:0});
+  const result = rows.reduce((a,r)=>{
+    for(const k of ["under64","w6471","w7275","w76109","double","cracked","deformed"]){
+      a[k] += val(r,COL[k]);
+    }
+    a.total += val(r,COL.total);
+    return a;
+  },{under64:0,w6471:0,w7275:0,w76109:0,double:0,cracked:0,deformed:0,total:0});
+  // หากชีตไม่ได้กรอกยอดรวม ระบบคำนวณจากทุกประเภทให้แทน
+  if(!result.total){
+    result.total = result.under64 + result.w6471 + result.w7275 + result.w76109 + result.double + result.cracked + result.deformed;
+  }
+  return result;
 }
 function selectedRows(){const d=document.getElementById("reportDate").value;return allRows.filter(r=>dayKey(r)===d);}
 function setError(msg){const e=document.getElementById("error");e.textContent=msg;e.style.display=msg?"block":"none";}
 function render(){
   const rows=selectedRows(), a=aggregate(rows);
-  const good=a.w6572+a.w7376+a.w77109;
-  document.getElementById("total").textContent=fmt(a.total);
-  document.getElementById("good").textContent=fmt(good);
-  document.getElementById("double").textContent=fmt(a.double);
-  document.getElementById("cracked").textContent=fmt(a.cracked);
+  const good=a.w7275+a.w76109;
+  for(const k of ["total","under64","w6471","w7275","w76109","double","cracked","deformed"]){
+    document.getElementById(k).textContent=fmt(a[k]);
+  }
   document.getElementById("goodPct").textContent=(a.total?good/a.total*100:0).toLocaleString("th-TH",{maximumFractionDigits:2})+"%";
   document.getElementById("tableSubtitle").textContent="วันที่ "+(document.getElementById("reportDate").value||"—")+" · "+rows.length+" รายการ";
   const byBarn={};rows.forEach(r=>{const b=String(r[COL.barn]??"ไม่ระบุ");if(!byBarn[b])byBarn[b]=[];byBarn[b].push(r);});
   const barnData=Object.keys(byBarn).sort((x,y)=>Number(x)-Number(y)).map(b=>({barn:b,...aggregate(byBarn[b])}));
   const search=document.getElementById("tableSearch").value.trim().toLowerCase();
-  document.getElementById("barnRows").innerHTML=barnData.filter(b=>b.barn.toLowerCase().includes(search)).map(b=>`<tr><td>โรงเรือน ${esc(b.barn)}</td><td>${fmt(b.under64)}</td><td>${fmt(b.w6572)}</td><td>${fmt(b.w7376)}</td><td>${fmt(b.w77109)}</td><td>${fmt(b.double)}</td><td>${fmt(b.cracked)}</td><td>${fmt(b.deformed)}</td><td><strong>${fmt(b.total)}</strong></td></tr>`).join("") || '<tr><td colspan="9" class="empty">ไม่พบข้อมูลสำหรับวันที่เลือก</td></tr>';
+  document.getElementById("barnRows").innerHTML=barnData.filter(b=>b.barn.toLowerCase().includes(search)).map(b=>`<tr><td>โรงเรือน ${esc(b.barn)}</td><td>${fmt(b.under64)}</td><td>${fmt(b.w6471)}</td><td>${fmt(b.w7275)}</td><td>${fmt(b.w76109)}</td><td>${fmt(b.double)}</td><td>${fmt(b.cracked)}</td><td>${fmt(b.deformed)}</td><td><strong>${fmt(b.total)}</strong></td></tr>`).join("") || '<tr><td colspan="9" class="empty">ไม่พบข้อมูลสำหรับวันที่เลือก</td></tr>';
   const keys=[...new Set(allRows.map(dayKey).filter(Boolean))].sort();
   const period=document.getElementById("period").value;
   const shown=period==="all"?keys:keys.slice(-Number(period));
@@ -104,7 +123,7 @@ function render(){
   if(trendChart)trendChart.destroy();
   trendChart=new Chart(document.getElementById("trendChart"),{type:"line",data:{labels:daily.map(x=>x.date),datasets:[{label:"ไข่ทั้งหมด",data:daily.map(x=>x.total),borderColor:"#239363",backgroundColor:"rgba(35,147,99,.12)",fill:true,tension:.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>Number(v).toLocaleString()}},x:{ticks:{maxTicksLimit:8,maxRotation:0}}}}});
   if(mixChart)mixChart.destroy();
-  mixChart=new Chart(document.getElementById("mixChart"),{type:"doughnut",data:{labels:["น้อยกว่า 64 กรัม","65–72 กรัม","73–76 กรัม","77–109 กรัม","ไข่แฝด","ไข่บุบร้าว","ไข่ผิดรูป"],datasets:[{data:[a.under64,a.w6572,a.w7376,a.w77109,a.double,a.cracked,a.deformed],backgroundColor:["#94a3b8","#60a5fa","#34a853","#176b45","#f59e0b","#ef4444","#a78bfa"],borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:10,padding:12,font:{size:11}}}}}});
+  mixChart=new Chart(document.getElementById("mixChart"),{type:"doughnut",data:{labels:["น้อยกว่า 64 กรัม","64–71 กรัม","72–75 กรัม","76–109 กรัม","ไข่แฝด ≥110 กรัม","ไข่บุบร้าว","ไข่ผิดรูป"],datasets:[{data:[a.under64,a.w6471,a.w7275,a.w76109,a.double,a.cracked,a.deformed],backgroundColor:["#94a3b8","#60a5fa","#34a853","#176b45","#f59e0b","#ef4444","#a78bfa"],borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:10,padding:12,font:{size:11}}}}}});
   if(barnChart)barnChart.destroy();
   barnChart=new Chart(document.getElementById("barnChart"),{type:"bar",data:{labels:barnData.map(b=>"โรงเรือน "+b.barn),datasets:[{label:"รวมทั้งหมด",data:barnData.map(b=>b.total),backgroundColor:"#239363",borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
 }
@@ -132,15 +151,12 @@ function loadData(){
   script.onerror=()=>{setError("เชื่อมต่อข้อมูลไม่สำเร็จ กรุณาตรวจสอบ URL และสิทธิ์การ Deploy Google Apps Script");document.getElementById("status").textContent="การเชื่อมต่อผิดพลาด";};
   document.body.appendChild(script);
 }
-document.getElementById("reportDate").addEventListener("change", render);
-document.getElementById("period").addEventListener("change", render);
-document.getElementById("tableSearch").addEventListener("input", render);
-document.getElementById("refresh").addEventListener("click", loadData);
-
-// โหลดข้อมูลครั้งแรก
+document.getElementById("reportDate").addEventListener("change",render);
+document.getElementById("period").addEventListener("change",render);
+document.getElementById("tableSearch").addEventListener("input",render);
+document.getElementById("refresh").addEventListener("click",loadData);
 loadData();
-
-// อัปเดตข้อมูลอัตโนมัติทุก 30 วินาที
+// อัปเดตข้อมูลจาก Google Sheets อัตโนมัติทุก 30 วินาที
 setInterval(loadData, 30000);
 </script>
 </body>
