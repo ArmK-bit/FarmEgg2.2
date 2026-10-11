@@ -136,6 +136,11 @@ document.getElementById("period").addEventListener("change",render);
 document.getElementById("tableSearch").addEventListener("input",render);
 document.getElementById("refresh").addEventListener("click",loadData);
 loadData();
+  ```javascript
+loadData();
+// อัปเดตข้อมูลอัตโนมัติทุก 30 วินาที
+setInterval(loadData, 30 * 1000);
+```
 </script>
 </body>
 </html>
