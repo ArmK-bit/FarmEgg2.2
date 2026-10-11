@@ -131,16 +131,16 @@ function loadData(){
   script.onerror=()=>{setError("เชื่อมต่อข้อมูลไม่สำเร็จ กรุณาตรวจสอบ URL และสิทธิ์การ Deploy Google Apps Script");document.getElementById("status").textContent="การเชื่อมต่อผิดพลาด";};
   document.body.appendChild(script);
 }
-document.getElementById("reportDate").addEventListener("change",render);
-document.getElementById("period").addEventListener("change",render);
-document.getElementById("tableSearch").addEventListener("input",render);
-document.getElementById("refresh").addEventListener("click",loadData);
+document.getElementById("reportDate").addEventListener("change", render);
+document.getElementById("period").addEventListener("change", render);
+document.getElementById("tableSearch").addEventListener("input", render);
+document.getElementById("refresh").addEventListener("click", loadData);
+
+// โหลดข้อมูลครั้งแรก
 loadData();
-  ```javascript
-loadData();
+
 // อัปเดตข้อมูลอัตโนมัติทุก 30 วินาที
-setInterval(loadData, 30 * 1000);
-```
+setInterval(loadData, 30000);
 </script>
 </body>
 </html>
