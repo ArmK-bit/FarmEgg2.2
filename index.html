@@ -196,10 +196,32 @@ document.getElementById("refresh").addEventListener("click",loadData);
 const loginForm=document.getElementById("loginForm");
 loginForm.action=APPS_SCRIPT_URL;
 let loginNonce="";
-function showDashboard(token){sessionStorage.setItem("stf_session_token",token);document.body.classList.add("authenticated");document.getElementById("loginScreen").hidden=true;document.getElementById("loginMessage").textContent="";loadData();}
-function showLogin(message=""){document.body.classList.remove("authenticated");document.getElementById("loginScreen").hidden=false;document.getElementById("loginPassword").value="";document.getElementById("loginMessage").textContent=message;}
-window.addEventListener("message",function(event){const d=event.data||{};if(d.type!=="stf-login-result"||d.nonce!==loginNonce)return;if(d.ok&&d.token){showDashboard(d.token)}else{showLogin(d.message||"รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่")} });
-loginForm.addEventListener("submit",function(){loginNonce=String(Date.now())+Math.random().toString(36).slice(2);document.getElementById("loginNonce").value=loginNonce;document.getElementById("loginMessage").style.color="#6b7d73";document.getElementById("loginMessage").textContent="กำลังตรวจสอบรหัสผ่าน…";});
+function showDashboard(token){const b=loginForm.querySelector('button[type="submit"]');b.disabled=false;b.textContent="เข้าสู่ระบบ";sessionStorage.setItem("stf_session_token",token);document.body.classList.add("authenticated");document.getElementById("loginScreen").hidden=true;document.getElementById("loginMessage").textContent="";loadData();}
+function showLogin(message=""){const b=loginForm.querySelector('button[type="submit"]');b.disabled=false;b.textContent="เข้าสู่ระบบ";document.body.classList.remove("authenticated");document.getElementById("loginScreen").hidden=false;document.getElementById("loginPassword").value="";document.getElementById("loginMessage").textContent=message;}
+let loginTimeoutId=null;
+window.addEventListener("message",function(event){
+  const d=event.data||{};
+  if(d.type!=="stf-login-result"||d.nonce!==loginNonce)return;
+  if(loginTimeoutId){clearTimeout(loginTimeoutId);loginTimeoutId=null;}
+  if(d.ok&&d.token){showDashboard(d.token);}
+  else{showLogin(d.message||"รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่");}
+});
+loginForm.addEventListener("submit",function(){
+  loginNonce=String(Date.now())+Math.random().toString(36).slice(2);
+  document.getElementById("loginNonce").value=loginNonce;
+  const submitButton=loginForm.querySelector('button[type="submit"]');
+  submitButton.disabled=true;
+  submitButton.textContent="กำลังตรวจสอบ…";
+  document.getElementById("loginMessage").style.color="#6b7d73";
+  document.getElementById("loginMessage").textContent="กำลังตรวจสอบรหัสผ่าน…";
+  if(loginTimeoutId)clearTimeout(loginTimeoutId);
+  loginTimeoutId=setTimeout(function(){
+    submitButton.disabled=false;
+    submitButton.textContent="เข้าสู่ระบบ";
+    document.getElementById("loginMessage").style.color="#b42318";
+    document.getElementById("loginMessage").textContent="ไม่ได้รับคำตอบจากระบบ กรุณาตรวจสอบการปรับใช้ Code.gs และ URL ของ Web App";
+  },12000);
+});
 document.getElementById("logoutButton").addEventListener("click",function(){const token=sessionStorage.getItem("stf_session_token")||"";sessionStorage.removeItem("stf_session_token");document.body.classList.remove("authenticated");showLogin("ออกจากระบบแล้ว");const f=document.createElement("form");f.method="post";f.target="loginFrame";f.action=APPS_SCRIPT_URL;for(const [k,v] of [["action","logout"],["token",token]]){const i=document.createElement("input");i.type="hidden";i.name=k;i.value=v;f.appendChild(i)}document.body.appendChild(f);f.submit();f.remove();});
 document.getElementById("togglePassword").addEventListener("click",function(){const p=document.getElementById("loginPassword");p.type=p.type==="password"?"text":"password";this.textContent=p.type==="password"?"แสดง":"ซ่อน";});
 const savedToken=sessionStorage.getItem("stf_session_token");if(savedToken){showDashboard(savedToken)}else{showLogin()}
