@@ -220,7 +220,7 @@ loginForm.addEventListener("submit",function(){
     submitButton.textContent="เข้าสู่ระบบ";
     document.getElementById("loginMessage").style.color="#b42318";
     document.getElementById("loginMessage").textContent="ไม่ได้รับคำตอบจากระบบ กรุณาตรวจสอบการปรับใช้ Code.gs และ URL ของ Web App";
-  },12000);
+  },5000);
 });
 document.getElementById("logoutButton").addEventListener("click",function(){const token=sessionStorage.getItem("stf_session_token")||"";sessionStorage.removeItem("stf_session_token");document.body.classList.remove("authenticated");showLogin("ออกจากระบบแล้ว");const f=document.createElement("form");f.method="post";f.target="loginFrame";f.action=APPS_SCRIPT_URL;for(const [k,v] of [["action","logout"],["token",token]]){const i=document.createElement("input");i.type="hidden";i.name=k;i.value=v;f.appendChild(i)}document.body.appendChild(f);f.submit();f.remove();});
 document.getElementById("togglePassword").addEventListener("click",function(){const p=document.getElementById("loginPassword");p.type=p.type==="password"?"text":"password";this.textContent=p.type==="password"?"แสดง":"ซ่อน";});
