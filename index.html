@@ -16,12 +16,28 @@ main{max-width:1440px;margin:auto;padding:24px clamp(12px,3vw,36px) 40px}.toolba
 footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 @media(max-width:1100px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}.charts{grid-template-columns:1fr}}
 @media(max-width:650px){header{padding:18px 15px}.live{display:none}main{padding:18px 12px}.cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card{padding:13px;min-height:120px}.card-value{font-size:25px}.panel{padding:14px}.chart-wrap{height:240px}.field input,.field select{min-width:135px}.table-head input{min-width:100%;width:100%}}
+
+.login-screen{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#104a30,#239363)}
+.login-card{width:min(100%,390px);background:#fff;border-radius:22px;padding:32px;box-shadow:0 24px 70px #082b1c55;color:#172b22;display:flex;flex-direction:column;gap:13px}
+.login-logo{width:58px;height:58px;border-radius:17px;background:#e8f5ed;display:grid;place-items:center;font-size:31px;align-self:center}.login-card h1{margin:0;text-align:center;font-size:27px;color:#176b45}.login-card p{text-align:center;margin:0 0 10px;color:#6b7d73;font-size:13px}.login-card label{font-size:13px;font-weight:700}.password-wrap{display:flex;border:1px solid #d7e4dc;border-radius:10px;overflow:hidden}.password-wrap input{flex:1;min-width:0;border:0;padding:13px;font:inherit;outline:none}.password-wrap button{border:0;border-radius:0;background:#f1f7f3;color:#176b45;min-height:0}.login-submit{background:#176b45!important;color:#fff!important;border:0!important;padding:13px!important}.login-card small{text-align:center;color:#718278}.login-card #loginMessage{font-size:13px;color:#b42318;min-height:18px;text-align:center}.login-screen[hidden]{display:none!important}body:not(.authenticated) header,body:not(.authenticated) main,body:not(.authenticated) footer{visibility:hidden}body.authenticated .login-screen{display:none}
+
 </style>
 </head>
 <body>
+<div id="loginScreen" class="login-screen">
+  <form id="loginForm" class="login-card" method="post" target="loginFrame">
+    <div class="login-logo">🥚</div><h1>STF EggTrack</h1><p>ระบบติดตามผลผลิตไข่ · ฟาร์มไทรทอง</p>
+    <label for="loginPassword">รหัสผ่าน</label>
+    <div class="password-wrap"><input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="กรอกรหัสผ่าน" required><button id="togglePassword" type="button" aria-label="แสดงรหัสผ่าน">แสดง</button></div>
+    <input type="hidden" name="nonce" id="loginNonce"><button class="login-submit" type="submit">เข้าสู่ระบบ</button>
+    <div id="loginMessage" role="status"></div><small>เฉพาะผู้ได้รับอนุญาต</small>
+  </form>
+  <iframe name="loginFrame" id="loginFrame" title="login" hidden></iframe>
+</div>
+
 <header>
   <div class="brand"><div class="logo">🥚</div><div><h1>STF EggTrack</h1><p>Egg Production Dashboard ·Sai Thong Farm </p></div></div>
-  <div class="live">● Dashboard · Read only</div>
+  <div style="display:flex;align-items:center;gap:10px"><div class="live">● Dashboard · Read only</div><button id="logoutButton" type="button" style="background:#ffffff18;color:white;border-color:#ffffff55">ออกจากระบบ</button></div>
 </header>
 <main>
   <div class="toolbar">
@@ -141,7 +157,7 @@ function loadData(){
     setError("");
   };
   const script=document.createElement("script");script.id="jsonp-script";
-  script.src=APPS_SCRIPT_URL+(APPS_SCRIPT_URL.includes("?")?"&":"?")+"callback=receiveEggTrackData&ts="+Date.now();
+  script.src=APPS_SCRIPT_URL+(APPS_SCRIPT_URL.includes("?")?"&":"?")+"callback=receiveEggTrackData&token="+encodeURIComponent(sessionStorage.getItem("stf_session_token")||"")+"&ts="+Date.now();
   script.onerror=()=>{setError("เชื่อมต่อข้อมูลไม่สำเร็จ กรุณาตรวจสอบ URL และสิทธิ์การ Deploy Google Apps Script");document.getElementById("status").textContent="การเชื่อมต่อผิดพลาด";};
   document.body.appendChild(script);
 }
@@ -177,8 +193,17 @@ document.addEventListener("click",e=>{if(!e.target.closest(".date-picker"))close
 document.getElementById("period").addEventListener("change",render);
 document.getElementById("tableSearch").addEventListener("input",render);
 document.getElementById("refresh").addEventListener("click",loadData);
-loadData();
-setInterval(loadData,30000);
+const loginForm=document.getElementById("loginForm");
+loginForm.action=APPS_SCRIPT_URL;
+let loginNonce="";
+function showDashboard(token){sessionStorage.setItem("stf_session_token",token);document.body.classList.add("authenticated");document.getElementById("loginScreen").hidden=true;document.getElementById("loginMessage").textContent="";loadData();}
+function showLogin(message=""){document.body.classList.remove("authenticated");document.getElementById("loginScreen").hidden=false;document.getElementById("loginPassword").value="";document.getElementById("loginMessage").textContent=message;}
+window.addEventListener("message",function(event){const d=event.data||{};if(d.type!=="stf-login-result"||d.nonce!==loginNonce)return;if(d.ok&&d.token){showDashboard(d.token)}else{showLogin(d.message||"รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่")} });
+loginForm.addEventListener("submit",function(){loginNonce=String(Date.now())+Math.random().toString(36).slice(2);document.getElementById("loginNonce").value=loginNonce;document.getElementById("loginMessage").style.color="#6b7d73";document.getElementById("loginMessage").textContent="กำลังตรวจสอบรหัสผ่าน…";});
+document.getElementById("logoutButton").addEventListener("click",function(){const token=sessionStorage.getItem("stf_session_token")||"";sessionStorage.removeItem("stf_session_token");document.body.classList.remove("authenticated");showLogin("ออกจากระบบแล้ว");const f=document.createElement("form");f.method="post";f.target="loginFrame";f.action=APPS_SCRIPT_URL;for(const [k,v] of [["action","logout"],["token",token]]){const i=document.createElement("input");i.type="hidden";i.name=k;i.value=v;f.appendChild(i)}document.body.appendChild(f);f.submit();f.remove();});
+document.getElementById("togglePassword").addEventListener("click",function(){const p=document.getElementById("loginPassword");p.type=p.type==="password"?"text":"password";this.textContent=p.type==="password"?"แสดง":"ซ่อน";});
+const savedToken=sessionStorage.getItem("stf_session_token");if(savedToken){showDashboard(savedToken)}else{showLogin()}
+setInterval(()=>{if(document.body.classList.contains("authenticated"))loadData()},30000);
 </script>
 </body>
 </html>
