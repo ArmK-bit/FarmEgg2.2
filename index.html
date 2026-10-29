@@ -59,6 +59,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
     <div class="card red"><div class="card-label">◈ ไข่บุบร้าว</div><div class="card-value" id="cracked">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
     <div class="card purple"><div class="card-label">ไข่ผิดรูป</div><div class="card-value" id="deformed">—</div><div class="card-note">ฟองในวันที่เลือก</div></div>
     <div class="card blue"><div class="card-label">% ไข่ขนาด 72–109 กรัม</div><div class="card-value" id="goodPct">—</div><div class="card-note">เทียบกับไข่ทั้งหมด</div></div>
+    <div class="card red"><div class="card-label">🦆 เป็ดตายรายวัน</div><div class="card-value" id="deadDucks">—</div><div class="card-note">ตัวในวันที่เลือก</div></div>
   </section>
   <section class="charts">
     <div class="panel"><div class="panel-head"><div><h2>แนวโน้มผลผลิตรายวัน</h2><div class="hint">จำนวนไข่ทั้งหมดตามวันที่</div></div></div><div class="chart-wrap"><canvas id="trendChart"></canvas></div></div>
@@ -67,7 +68,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
   <section class="panel" style="margin-bottom:18px"><div class="panel-head"><div><h2>เปรียบเทียบผลผลิตรายโรงเรือน</h2><div class="hint">จำนวนไข่ทั้งหมดในวันที่เลือก</div></div></div><div class="chart-wrap"><canvas id="barnChart"></canvas></div></section>
   <section class="panel table-panel">
     <div class="table-head"><div><h2 style="margin:0 0 5px">รายละเอียดรายโรงเรือน</h2><div class="hint" id="tableSubtitle">ข้อมูลตามวันที่เลือก</div></div><input id="tableSearch" placeholder="ค้นหาโรงเรือน..."></div>
-    <div class="table-scroll"><table><thead><tr><th>โรงเรือน</th><th>น้อยกว่า 64 กรัม</th><th>64–71 กรัม</th><th>72–75 กรัม</th><th>76–109 กรัม</th><th>ไข่แฝด ≥110 กรัม</th><th>ไข่บุบร้าว</th><th>ไข่ผิดรูป</th><th>รวมทั้งหมด</th></tr></thead><tbody id="barnRows"></tbody></table></div>
+    <div class="table-scroll"><table><thead><tr><th>โรงเรือน</th><th>น้อยกว่า 64 กรัม</th><th>64–71 กรัม</th><th>72–75 กรัม</th><th>76–109 กรัม</th><th>ไข่แฝด ≥110 กรัม</th><th>ไข่บุบร้าว</th><th>ไข่ผิดรูป</th><th>เป็ดตาย (ตัว)</th><th>รวมไข่ทั้งหมด</th></tr></thead><tbody id="barnRows"></tbody></table></div>
   </section>
   <div class="status" id="status">กำลังเชื่อมต่อข้อมูล…</div>
 </main>
@@ -81,8 +82,10 @@ const COL = {
   w7275: "ไข่เล็กคัดฟัก (72-75 กรัม)",
   w76109: "ไข่ฟัก (76-109 กรัม)",
   double: "ไข่แฝด (110 กรัมขึ้นไป)",
-  cracked: "ไข่บุบร้าว", deformed: "ไข่ผิดรูป", total: "รวมทั้งหมด"
+  cracked: "ไข่บุบร้าว", deformed: "ไข่ผิดรูป", total: "รวมทั้งหมด",
+  dead: "จำนวนเป็ดตายรายวัน"
 };
+const DEAD_ALIASES = ["จำนวนเป็ดตายรายวัน","จำนวนเป็ดตาย","เป็ดตายรายวัน","เป็ดตาย","เป็ดตาย (ตัว)","จำนวนตัวเป็ดตาย"];
 let allRows = [], trendChart, mixChart, barnChart;
 const number = v => Number(String(v ?? "").replace(/,/g, "")) || 0;
 const fmt = v => Math.round(v).toLocaleString("th-TH");
@@ -110,12 +113,19 @@ function normalizeDay(v){const d=parseDate(v);return d?iso(d):"";}
 function thaiDate(v){const d=parseDate(v);return d?`${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()+543}`:"";}
 function dayKey(row){return normalizeDay(row[COL.date]);}
 function val(row,key){return number(row[key]);}
+function deadVal(row){
+  for(const key of DEAD_ALIASES){if(Object.prototype.hasOwnProperty.call(row,key)) return val(row,key);}
+  // รองรับกรณี Apps Script ส่งชื่อหัวคอลัมน์ที่มีคำว่า "ตาย"
+  const key=Object.keys(row||{}).find(k=>String(k).includes("ตาย"));
+  return key?val(row,key):0;
+}
 function aggregate(rows){
   const result = rows.reduce((a,r)=>{
     for(const k of ["under64","w6471","w7275","w76109","double","cracked","deformed"]) a[k] += val(r,COL[k]);
     a.total += val(r,COL.total);
+    a.dead += deadVal(r);
     return a;
-  },{under64:0,w6471:0,w7275:0,w76109:0,double:0,cracked:0,deformed:0,total:0});
+  },{under64:0,w6471:0,w7275:0,w76109:0,double:0,cracked:0,deformed:0,total:0,dead:0});
   if(!result.total) result.total=result.under64+result.w6471+result.w7275+result.w76109+result.double+result.cracked+result.deformed;
   return result;
 }
@@ -124,12 +134,13 @@ function setError(msg){const e=document.getElementById("error");e.textContent=ms
 function render(){
   const rows=selectedRows(), a=aggregate(rows), good=a.w7275+a.w76109;
   for(const k of ["total","under64","w6471","w7275","w76109","double","cracked","deformed"]) document.getElementById(k).textContent=fmt(a[k]);
+  document.getElementById("deadDucks").textContent=fmt(a.dead);
   document.getElementById("goodPct").textContent=(a.total?good/a.total*100:0).toLocaleString("th-TH",{maximumFractionDigits:2})+"%";
   document.getElementById("tableSubtitle").textContent="วันที่ "+(thaiDate(document.getElementById("reportDate").value)||"—")+" · "+rows.length+" รายการ";
   const byBarn={};rows.forEach(r=>{const b=String(r[COL.barn]??"ไม่ระบุ");if(!byBarn[b])byBarn[b]=[];byBarn[b].push(r);});
   const barnData=Object.keys(byBarn).sort((x,y)=>Number(x)-Number(y)).map(b=>({barn:b,...aggregate(byBarn[b])}));
   const search=document.getElementById("tableSearch").value.trim().toLowerCase();
-  document.getElementById("barnRows").innerHTML=barnData.filter(b=>b.barn.toLowerCase().includes(search)).map(b=>`<tr><td>โรงเรือน ${esc(b.barn)}</td><td>${fmt(b.under64)}</td><td>${fmt(b.w6471)}</td><td>${fmt(b.w7275)}</td><td>${fmt(b.w76109)}</td><td>${fmt(b.double)}</td><td>${fmt(b.cracked)}</td><td>${fmt(b.deformed)}</td><td><strong>${fmt(b.total)}</strong></td></tr>`).join("") || '<tr><td colspan="9" class="empty">ไม่พบข้อมูลสำหรับวันที่เลือก</td></tr>';
+  document.getElementById("barnRows").innerHTML=barnData.filter(b=>b.barn.toLowerCase().includes(search)).map(b=>`<tr><td>โรงเรือน ${esc(b.barn)}</td><td>${fmt(b.under64)}</td><td>${fmt(b.w6471)}</td><td>${fmt(b.w7275)}</td><td>${fmt(b.w76109)}</td><td>${fmt(b.double)}</td><td>${fmt(b.cracked)}</td><td>${fmt(b.deformed)}</td><td><strong style="color:#d94848">${fmt(b.dead)}</strong></td><td><strong>${fmt(b.total)}</strong></td></tr>`).join("") || '<tr><td colspan="10" class="empty">ไม่พบข้อมูลสำหรับวันที่เลือก</td></tr>';
   const keys=[...new Set(allRows.map(dayKey).filter(Boolean))].sort(), period=document.getElementById("period").value;
   const shown=period==="all"?keys:keys.slice(-Number(period));
   const daily=shown.map(k=>({date:k,total:aggregate(allRows.filter(r=>dayKey(r)===k)).total}));
