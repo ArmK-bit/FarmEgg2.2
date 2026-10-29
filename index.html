@@ -66,6 +66,10 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
     <div class="panel"><div class="panel-head"><div><h2>สัดส่วนประเภทไข่</h2><div class="hint">ตามวันที่รายงานที่เลือก</div></div></div><div class="chart-wrap"><canvas id="mixChart"></canvas></div></div>
   </section>
   <section class="panel" style="margin-bottom:18px"><div class="panel-head"><div><h2>เปรียบเทียบผลผลิตรายโรงเรือน</h2><div class="hint">จำนวนไข่ทั้งหมดในวันที่เลือก</div></div></div><div class="chart-wrap"><canvas id="barnChart"></canvas></div></section>
+  <section class="charts">
+    <div class="panel"><div class="panel-head"><div><h2>แนวโน้มเป็ดตายรายวัน</h2><div class="hint">จำนวนเป็ดตายตามช่วงกราฟที่เลือกด้านบน</div></div></div><div class="chart-wrap"><canvas id="deadTrendChart"></canvas></div></div>
+    <div class="panel"><div class="panel-head"><div><h2>เปรียบเทียบเป็ดตายรายโรงเรือน</h2><div class="hint">จำนวนเป็ดตายในวันที่รายงานที่เลือก</div></div></div><div class="chart-wrap"><canvas id="deadBarnChart"></canvas></div></div>
+  </section>
   <section class="panel table-panel">
     <div class="table-head"><div><h2 style="margin:0 0 5px">รายละเอียดรายโรงเรือน</h2><div class="hint" id="tableSubtitle">ข้อมูลตามวันที่เลือก</div></div><input id="tableSearch" placeholder="ค้นหาโรงเรือน..."></div>
     <div class="table-scroll"><table><thead><tr><th>โรงเรือน</th><th>น้อยกว่า 64 กรัม</th><th>64–71 กรัม</th><th>72–75 กรัม</th><th>76–109 กรัม</th><th>ไข่แฝด ≥110 กรัม</th><th>ไข่บุบร้าว</th><th>ไข่ผิดรูป</th><th>เป็ดตาย (ตัว)</th><th>รวมไข่ทั้งหมด</th></tr></thead><tbody id="barnRows"></tbody></table></div>
@@ -86,7 +90,7 @@ const COL = {
   dead: "จำนวนเป็ดตายรายวัน"
 };
 const DEAD_ALIASES = ["จำนวนเป็ดตายรายวัน","จำนวนเป็ดตาย","เป็ดตายรายวัน","เป็ดตาย","เป็ดตาย (ตัว)","จำนวนตัวเป็ดตาย"];
-let allRows = [], trendChart, mixChart, barnChart;
+let allRows = [], trendChart, mixChart, barnChart, deadTrendChart, deadBarnChart;
 const number = v => Number(String(v ?? "").replace(/,/g, "")) || 0;
 const fmt = v => Math.round(v).toLocaleString("th-TH");
 function parseDate(v){
@@ -150,6 +154,12 @@ function render(){
   mixChart=new Chart(document.getElementById("mixChart"),{type:"doughnut",data:{labels:["น้อยกว่า 64 กรัม","64–71 กรัม","72–75 กรัม","76–109 กรัม","ไข่แฝด ≥110 กรัม","ไข่บุบร้าว","ไข่ผิดรูป"],datasets:[{data:[a.under64,a.w6471,a.w7275,a.w76109,a.double,a.cracked,a.deformed],backgroundColor:["#94a3b8","#60a5fa","#34a853","#176b45","#f59e0b","#ef4444","#a78bfa"],borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{boxWidth:10,padding:12,font:{size:11}}}}}});
   if(barnChart)barnChart.destroy();
   barnChart=new Chart(document.getElementById("barnChart"),{type:"bar",data:{labels:barnData.map(b=>"โรงเรือน "+b.barn),datasets:[{label:"รวมทั้งหมด",data:barnData.map(b=>b.total),backgroundColor:"#239363",borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
+  // กราฟเป็ดตายรายวัน ใช้ช่วงวันที่เดียวกับกราฟผลผลิต
+  const deadDaily=shown.map(k=>({date:k,dead:aggregate(allRows.filter(r=>dayKey(r)===k)).dead}));
+  if(deadTrendChart)deadTrendChart.destroy();
+  deadTrendChart=new Chart(document.getElementById("deadTrendChart"),{type:"line",data:{labels:deadDaily.map(x=>x.date),datasets:[{label:"เป็ดตาย (ตัว)",data:deadDaily.map(x=>x.dead),borderColor:"#d94848",backgroundColor:"rgba(217,72,72,.12)",fill:true,tension:.25,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>"เป็ดตาย: "+fmt(ctx.parsed.y)+" ตัว"}}},scales:{y:{beginAtZero:true,ticks:{precision:0,callback:v=>Number(v).toLocaleString("th-TH")}},x:{ticks:{maxTicksLimit:8,maxRotation:0}}}}});
+  if(deadBarnChart)deadBarnChart.destroy();
+  deadBarnChart=new Chart(document.getElementById("deadBarnChart"),{type:"bar",data:{labels:barnData.map(b=>"โรงเรือน "+b.barn),datasets:[{label:"เป็ดตาย (ตัว)",data:barnData.map(b=>b.dead),backgroundColor:"#d94848",borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>"เป็ดตาย: "+fmt(ctx.parsed.y)+" ตัว"}}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}});
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function loadData(){
